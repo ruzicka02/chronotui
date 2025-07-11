@@ -72,12 +72,26 @@ class Stopwatch(HorizontalGroup):
                 app.select_stopwatch(self)
             time_display.reset()
 
+    def __init__(self, name: str = None) -> None:
+        super().__init__()
+        self.sw_name = name or "Stopwatch"
+        self._label_widget = None
+
     def compose(self) -> ComposeResult:
         """Create child widgets of a stopwatch."""
+        from textual.widgets import Label
+        label = Label(self.sw_name, id="sw-name")
+        self._label_widget = label
+        yield label
         yield Button("Start", id="start", variant="success")
         yield Button("Stop", id="stop", variant="error")
         yield Button("Reset", id="reset")
         yield TimeDisplay()
+
+    def set_name(self, new_name: str) -> None:
+        self.sw_name = new_name
+        if self._label_widget is not None:
+            self._label_widget.update(new_name)
 
 
 class StopwatchApp(App):
@@ -90,6 +104,7 @@ class StopwatchApp(App):
         ("a", "add_stopwatch", "Add"),
         ("d", "delete_stopwatch", "Delete selected"),
         ("r", "reset_selected", "Reset selected"),
+        ("c", "change_name", "Change timer name"),
         ("q", "quit", "Quit"),
         ("up", "select_up", "Select Up"),
         ("down", "select_down", "Select Down"),
@@ -97,6 +112,27 @@ class StopwatchApp(App):
         ("k", "select_up", "Select Up"),
         ("space", "toggle_selected", "Start/Stop Selected"),
     ]
+    async def action_change_name(self) -> None:
+        """Open a dialog to change the selected stopwatch's name."""
+        if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
+            return
+        from textual.widgets import Input
+        from textual.containers import Center
+        from textual.screen import ModalScreen
+
+
+        class NameInputScreen(ModalScreen[str]):
+            def compose(self) -> ComposeResult:
+                # Pre-fill with current name
+                yield Center(Input(value=self.app.selected_stopwatch.sw_name, placeholder="Enter new name", id="name-input"))
+
+            def on_input_submitted(self, event: Input.Submitted) -> None:
+                self.dismiss(event.value)
+
+        # Show modal and get result
+        new_name = await self.push_screen(NameInputScreen())
+        if new_name is not None and new_name.strip():
+            self.selected_stopwatch.set_name(new_name)
     def action_reset_selected(self) -> None:
         """Reset the selected stopwatch."""
         if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
@@ -146,16 +182,19 @@ class StopwatchApp(App):
         yield Header()
         yield Footer()
         # Create stopwatches and select the first one by default
-        sw1 = Stopwatch()
-        sw2 = Stopwatch()
-        sw3 = Stopwatch()
+        sw1 = Stopwatch("Stopwatch 1")
+        sw2 = Stopwatch("Stopwatch 2")
+        sw3 = Stopwatch("Stopwatch 3")
         self.selected_stopwatch = sw1
         sw1.add_class("selected")
         yield VerticalScroll(sw1, sw2, sw3, id="timers")
 
     def action_add_stopwatch(self) -> None:
         """An action to add a timer."""
-        new_stopwatch = Stopwatch()
+        # Name as "Stopwatch N" where N is next available number
+        timers = list(self.query("Stopwatch"))
+        new_name = f"Stopwatch {len(timers) + 1}"
+        new_stopwatch = Stopwatch(new_name)
         self.query_one("#timers").mount(new_stopwatch)
         self.select_stopwatch(new_stopwatch)
         new_stopwatch.scroll_visible()

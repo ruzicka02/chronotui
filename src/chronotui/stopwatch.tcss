@@ -1,3 +1,7 @@
+#sw-name {
+    padding-left: 2;
+    padding-top: 1;
+}
 
 Stopwatch {
     background: $boost;
