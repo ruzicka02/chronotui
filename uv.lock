@@ -4,8 +4,8 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "chronotui"
-version = "0.1.0"
-source = { virtual = "." }
+version = "0.2.1"
+source = { editable = "." }
 dependencies = [
     { name = "platformdirs" },
     { name = "textual" },
