@@ -9,5 +9,16 @@ dependencies = [
     "textual>=3.7.1",
 ]
 
+[build-system]
+requires = [
+    "setuptools>=60",
+    "setuptools-scm>=8.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mypkg = ["*.txt", "*.rst"]
+
 [project.scripts]
 chronotui = "chronotui.app:main"
