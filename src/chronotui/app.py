@@ -9,6 +9,17 @@ from chronotui.widgets.stopwatch import Stopwatch
 logger = logging.getLogger(__name__)
 
 
+def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        filename="chronotui.log",
+    )
+    app = StopwatchApp()
+    app.title = "ChronoTUI"
+    app.sub_title = "Track your time with style"
+    app.run()
+
+
 class StopwatchApp(App):
     """A Textual app to manage stopwatches."""
 
