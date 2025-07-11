@@ -2,7 +2,7 @@
 Time tracking app. Originally inspired from https://textual.textualize.io/tutorial/
 """
 
-from app import StopwatchApp
+from chronotui.app import StopwatchApp
 
 if __name__ == "__main__":
     import logging

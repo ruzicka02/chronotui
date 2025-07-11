@@ -1,6 +1,6 @@
 from textual.containers import HorizontalGroup
 from textual.widgets import Button, Label
-from widgets.time_display import TimeDisplay
+from chronotui.widgets.time_display import TimeDisplay
 import logging
 
 logger = logging.getLogger(__name__)

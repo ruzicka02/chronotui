@@ -4,7 +4,7 @@ from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll, Center
 from textual.screen import ModalScreen
 from textual.widgets import Header, Footer, Input
-from widgets.stopwatch import Stopwatch
+from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
 
