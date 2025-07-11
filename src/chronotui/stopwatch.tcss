@@ -23,7 +23,8 @@ Stopwatch.selected.started {
 }
 
 TimeDisplay {
-    text-align: center;
+    text-align: right;
+    padding-right: 5;
     color: $foreground-muted;
     height: 3;
 }
