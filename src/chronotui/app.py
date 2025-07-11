@@ -1,4 +1,5 @@
 import logging
+from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll, Center
 from textual.screen import ModalScreen
@@ -26,6 +27,7 @@ class StopwatchApp(App):
         ("space", "toggle_selected", "Start/Stop Selected"),
     ]
 
+    @work
     async def action_change_name(self) -> None:
         if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
             return
@@ -35,10 +37,12 @@ class StopwatchApp(App):
             def compose(self) -> ComposeResult:
                 yield Center(Input(value=self.app.selected_stopwatch.sw_name, placeholder="Enter new name", id="name-input"))
             def on_input_submitted(self, event: Input.Submitted) -> None:
-                self.dismiss(event.value)
+                new_name = self.query_one(Input).value
+                self.dismiss(new_name)
 
-        new_name = await self.push_screen(NameInputScreen())
+        new_name = await self.push_screen_wait(NameInputScreen())
         logger.info(f"Proposed name: {new_name}")
+
         if new_name is not None and new_name.strip():
             self.selected_stopwatch.set_name(new_name)
             logger.info(f"Stopwatch renamed to: {new_name}")
