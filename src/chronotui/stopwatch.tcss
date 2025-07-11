@@ -1,9 +1,21 @@
+
 Stopwatch {
     background: $boost;
     height: 5;
     margin: 1;
     min-width: 50;
     padding: 1;
+}
+
+Stopwatch.selected {
+    background: $panel;
+    border: round $primary;
+    height: 7;
+}
+
+Stopwatch.selected.started {
+    background: $success 90%;
+    border: round $success;
 }
 
 TimeDisplay {

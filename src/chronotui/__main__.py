@@ -53,16 +53,19 @@ class Stopwatch(HorizontalGroup):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed."""
-        button_id = event.button.id
-        time_display = self.query_one(TimeDisplay)
-        if button_id == "start":
-            time_display.start()
-            self.add_class("started")
-        elif button_id == "stop":
-            time_display.stop()
-            self.remove_class("started")
-        elif button_id == "reset":
-            time_display.reset()
+        # Only respond if this stopwatch is selected
+        app = self.app
+        if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is self:
+            button_id = event.button.id
+            time_display = self.query_one(TimeDisplay)
+            if button_id == "start":
+                time_display.start()
+                self.add_class("started")
+            elif button_id == "stop":
+                time_display.stop()
+                self.remove_class("started")
+            elif button_id == "reset":
+                time_display.reset()
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a stopwatch."""
@@ -82,25 +85,82 @@ class StopwatchApp(App):
         ("a", "add_stopwatch", "Add"),
         ("r", "remove_stopwatch", "Remove"),
         ("q", "quit", "Quit"),
+        ("up", "select_up", "Select Up"),
+        ("down", "select_down", "Select Down"),
+        ("j", "select_down", "Select Down"),
+        ("k", "select_up", "Select Up"),
     ]
+    def action_select_up(self) -> None:
+        """Select the previous stopwatch in the list."""
+        timers = list(self.query("Stopwatch"))
+        if not timers or not hasattr(self, "selected_stopwatch"):
+            return
+        try:
+            idx = timers.index(self.selected_stopwatch)
+        except ValueError:
+            return
+        if idx > 0:
+            self.select_stopwatch(timers[idx - 1])
+
+    def action_select_down(self) -> None:
+        """Select the next stopwatch in the list."""
+        timers = list(self.query("Stopwatch"))
+        if not timers or not hasattr(self, "selected_stopwatch"):
+            return
+        try:
+            idx = timers.index(self.selected_stopwatch)
+        except ValueError:
+            return
+        if idx + 1 < len(timers):
+            self.select_stopwatch(timers[idx + 1])
 
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
         yield Footer()
-        yield VerticalScroll(Stopwatch(), Stopwatch(), Stopwatch(), id="timers")
+        # Create stopwatches and select the first one by default
+        sw1 = Stopwatch()
+        sw2 = Stopwatch()
+        sw3 = Stopwatch()
+        self.selected_stopwatch = sw1
+        sw1.add_class("selected")
+        yield VerticalScroll(sw1, sw2, sw3, id="timers")
 
     def action_add_stopwatch(self) -> None:
         """An action to add a timer."""
         new_stopwatch = Stopwatch()
         self.query_one("#timers").mount(new_stopwatch)
+        self.select_stopwatch(new_stopwatch)
         new_stopwatch.scroll_visible()
 
     def action_remove_stopwatch(self) -> None:
         """Called to remove a timer."""
         timers = self.query("Stopwatch")
         if timers:
-            timers.last().remove()
+            to_remove = self.selected_stopwatch if hasattr(self, "selected_stopwatch") else timers.last()
+            next_selected = None
+            # Try to select previous, or next, or None
+            for sw in timers:
+                if sw is to_remove:
+                    break
+                next_selected = sw
+            if not next_selected:
+                # If no previous, try next
+                idx = list(timers).index(to_remove)
+                if idx + 1 < len(timers):
+                    next_selected = list(timers)[idx + 1]
+            to_remove.remove()
+            if next_selected:
+                self.select_stopwatch(next_selected)
+            else:
+                self.selected_stopwatch = None
+    def select_stopwatch(self, stopwatch: Stopwatch) -> None:
+        """Select the given stopwatch and update visual state."""
+        # Remove 'selected' class from all
+        for sw in self.query("Stopwatch"):
+            sw.remove_class("selected")
+        stopwatch.add_class("selected")
+        self.selected_stopwatch = stopwatch
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
