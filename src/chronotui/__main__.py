@@ -53,19 +53,24 @@ class Stopwatch(HorizontalGroup):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Event handler called when a button is pressed."""
-        # Only respond if this stopwatch is selected
         app = self.app
-        if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is self:
-            button_id = event.button.id
-            time_display = self.query_one(TimeDisplay)
-            if button_id == "start":
-                time_display.start()
-                self.add_class("started")
-            elif button_id == "stop":
-                time_display.stop()
-                self.remove_class("started")
-            elif button_id == "reset":
-                time_display.reset()
+        button_id = event.button.id
+        time_display = self.query_one(TimeDisplay)
+        if button_id == "start":
+            # If not selected, select this stopwatch first
+            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
+                app.select_stopwatch(self)
+            time_display.start()
+            self.add_class("started")
+        elif button_id == "stop":
+            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
+                app.select_stopwatch(self)
+            time_display.stop()
+            self.remove_class("started")
+        elif button_id == "reset":
+            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
+                app.select_stopwatch(self)
+            time_display.reset()
 
     def compose(self) -> ComposeResult:
         """Create child widgets of a stopwatch."""
@@ -81,15 +86,37 @@ class StopwatchApp(App):
     CSS_PATH = "stopwatch.tcss"
 
     BINDINGS = [
-        ("d", "toggle_dark", "Toggle dark mode"),
+        ("m", "toggle_dark", "Mode (dark/light)"),
         ("a", "add_stopwatch", "Add"),
-        ("r", "remove_stopwatch", "Remove"),
+        ("d", "delete_stopwatch", "Delete selected"),
+        ("r", "reset_selected", "Reset selected"),
         ("q", "quit", "Quit"),
         ("up", "select_up", "Select Up"),
         ("down", "select_down", "Select Down"),
         ("j", "select_down", "Select Down"),
         ("k", "select_up", "Select Up"),
+        ("space", "toggle_selected", "Start/Stop Selected"),
     ]
+    def action_reset_selected(self) -> None:
+        """Reset the selected stopwatch."""
+        if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
+            return
+        sw = self.selected_stopwatch
+        time_display = sw.query_one(TimeDisplay)
+        time_display.reset()
+        sw.remove_class("started")
+    def action_toggle_selected(self) -> None:
+        """Start or stop the selected stopwatch with spacebar."""
+        if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
+            return
+        sw = self.selected_stopwatch
+        time_display = sw.query_one(TimeDisplay)
+        if "started" in sw.classes:
+            time_display.stop()
+            sw.remove_class("started")
+        else:
+            time_display.start()
+            sw.add_class("started")
     def action_select_up(self) -> None:
         """Select the previous stopwatch in the list."""
         timers = list(self.query("Stopwatch"))
@@ -133,7 +160,7 @@ class StopwatchApp(App):
         self.select_stopwatch(new_stopwatch)
         new_stopwatch.scroll_visible()
 
-    def action_remove_stopwatch(self) -> None:
+    def action_delete_stopwatch(self) -> None:
         """Called to remove a timer."""
         timers = self.query("Stopwatch")
         if timers:
