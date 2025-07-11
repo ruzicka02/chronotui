@@ -81,6 +81,7 @@ class StopwatchApp(App):
         ("d", "toggle_dark", "Toggle dark mode"),
         ("a", "add_stopwatch", "Add"),
         ("r", "remove_stopwatch", "Remove"),
+        ("q", "quit", "Quit"),
     ]
 
     def compose(self) -> ComposeResult:
