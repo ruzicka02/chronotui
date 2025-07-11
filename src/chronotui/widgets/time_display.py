@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class TimeDisplay(Digits):
     """A widget to display elapsed time."""
 

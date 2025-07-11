@@ -8,6 +8,7 @@ from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
 
+
 class StopwatchApp(App):
     """A Textual app to manage stopwatches."""
 
@@ -35,7 +36,10 @@ class StopwatchApp(App):
 
         class NameInputScreen(ModalScreen[str]):
             def compose(self) -> ComposeResult:
-                yield Center(Input(value=self.app.selected_stopwatch.sw_name, placeholder="Enter new name", id="name-input"))
+                yield Center(
+                    Input(value=self.app.selected_stopwatch.sw_name, placeholder="Enter new name", id="name-input")
+                )
+
             def on_input_submitted(self, event: Input.Submitted) -> None:
                 new_name = self.query_one(Input).value
                 self.dismiss(new_name)
@@ -139,7 +143,5 @@ class StopwatchApp(App):
         logger.debug(f"Stopwatch selected: {stopwatch.sw_name}")
 
     def action_toggle_dark(self) -> None:
-        self.theme = (
-            "textual-dark" if self.theme == "textual-light" else "textual-light"
-        )
+        self.theme = "textual-dark" if self.theme == "textual-light" else "textual-light"
         logger.info(f"Theme toggled: {self.theme}")
