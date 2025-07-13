@@ -29,6 +29,10 @@ def main():
 
 
 class StopwatchApp(App):
+    async def on_mount(self) -> None:
+        # Autoload state on app start
+        await self.action_load_stopwatches()
+
     """A Textual app to manage stopwatches."""
 
     CSS_PATH = "stopwatch.tcss"
@@ -39,7 +43,7 @@ class StopwatchApp(App):
         ("d", "delete_stopwatch", "Delete selected"),
         ("r", "reset_selected", "Reset selected"),
         ("c", "change_name", "Change timer name"),
-        ("q", "quit", "Quit"),
+        ("q", "save_and_quit", "Quit"),
         ("up", "select_up", "Select Up"),
         ("down", "select_down", "Select Down"),
         ("j", "select_down", "Select Down"),
@@ -249,3 +253,8 @@ class StopwatchApp(App):
     def action_toggle_dark(self) -> None:
         self.theme = "textual-dark" if self.theme == "textual-light" else "textual-light"
         logger.info(f"Theme toggled: {self.theme}")
+
+    async def action_save_and_quit(self) -> None:
+        # Autosave state on quit
+        self.action_save_stopwatches()
+        self.exit()
