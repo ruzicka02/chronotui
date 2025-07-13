@@ -7,6 +7,7 @@ import time
 
 from textual import work
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Center, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
@@ -49,8 +50,8 @@ class StopwatchApp(App):
         ("j", "select_down", "Select Down"),
         ("k", "select_up", "Select Up"),
         ("space", "toggle_selected", "Start/Stop Selected"),
-        ("s", "save_stopwatches", "Save Stopwatches"),
-        ("L", "load_stopwatches", "Load Stopwatches"),
+        Binding("s", "save_stopwatches", "Save Stopwatches", show=False),
+        Binding("L", "load_stopwatches", "Load Stopwatches", show=False),
     ]
 
     SAVE_FILE = "chronotui_state.json"
