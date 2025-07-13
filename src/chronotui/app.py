@@ -21,7 +21,7 @@ file_logging = "-l" in sys.argv or "--log" in sys.argv
 
 def main():
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.INFO if file_logging else logging.ERROR,
         filename="chronotui.log" if file_logging else None,
     )
     app = StopwatchApp()
