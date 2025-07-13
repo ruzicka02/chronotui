@@ -1,5 +1,8 @@
 import logging
 import sys
+import json
+import datetime
+
 
 from textual import work
 from textual.app import App, ComposeResult
@@ -41,7 +44,43 @@ class StopwatchApp(App):
         ("j", "select_down", "Select Down"),
         ("k", "select_up", "Select Up"),
         ("space", "toggle_selected", "Start/Stop Selected"),
+        ("s", "save_stopwatches", "Save Stopwatches"),
     ]
+
+    SAVE_FILE = "chronotui_state.json"
+
+    def action_save_stopwatches(self) -> None:
+        stopwatches = []
+        for sw in self.query("Stopwatch"):
+            # Try to get the time from the TimeDisplay widget
+            try:
+                time_display = sw.query_one("TimeDisplay")
+                time_value = getattr(time_display, "time", None)
+                logger.info(f"Getting time for stopwatch: {sw.sw_name}, {time_value}")
+                if time_value is None and hasattr(time_display, "get_time"):
+                    time_value = time_display.get_time()
+            except Exception:
+                logger.warning(f"Failed to get time for stopwatch {sw.sw_name}")
+                time_value = None
+            sw_data = {
+                "name": getattr(sw, "sw_name", None),
+                "time": time_value,
+                "running": "started" in sw.classes,
+                "active": "selected" in sw.classes,
+            }
+            stopwatches.append(sw_data)
+
+        result = {
+            "stopwatches": stopwatches,
+            "last_modified": datetime.datetime.now().isoformat(),
+        }
+
+        try:
+            with open(self.SAVE_FILE, "w") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+            logger.info(f"Stopwatches saved to {self.SAVE_FILE}")
+        except Exception as e:
+            logger.error(f"Failed to save stopwatches: {e}")
 
     @work
     async def action_change_name(self) -> None:
