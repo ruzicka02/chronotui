@@ -57,9 +57,22 @@ class StopwatchApp(App):
             with open(self.SAVE_FILE, "r") as f:
                 data = json.load(f)
             stopwatches = data["stopwatches"] if isinstance(data, dict) and "stopwatches" in data else data
+            last_modified = data.get("last_modified") if isinstance(data, dict) else None
         except Exception as e:
             logger.error(f"Failed to load stopwatches: {e}")
             return
+
+        # Calculate time delta if clocks were running
+        time_delta = 0
+        if last_modified:
+            try:
+                saved_time = datetime.datetime.fromisoformat(last_modified)
+            except Exception as e:
+                logger.warning(f"Could not parse last_modified: {e}")
+                saved_time = None
+            if saved_time:
+                now = datetime.datetime.now(saved_time.tzinfo) if saved_time.tzinfo else datetime.datetime.now()
+                time_delta = (now - saved_time).total_seconds()
 
         # Remove all existing stopwatches, and wait until they really are removed
         await self.query("Stopwatch").remove()
@@ -71,6 +84,9 @@ class StopwatchApp(App):
             sw_time = sw_data.get("time", 0)
             running = sw_data.get("running", False)
             active = sw_data.get("active", False)
+            # If running, add time delta
+            if running and time_delta > 0:
+                sw_time += time_delta
             sw = Stopwatch(name, time=sw_time, running=running, active=active)
             self.query_one("#timers").mount(sw)
             logger.info(f"Loading stopwatch: {name}")
