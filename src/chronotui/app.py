@@ -1,4 +1,5 @@
 import logging
+import sys
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll, Center
@@ -7,12 +8,13 @@ from textual.widgets import Header, Footer, Input
 from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
+file_logging = "-l" in sys.argv or "--log" in sys.argv
 
 
 def main():
     logging.basicConfig(
         level=logging.INFO,
-        filename="chronotui.log",
+        filename="chronotui.log" if file_logging else None,
     )
     app = StopwatchApp()
     app.title = "ChronoTUI"
