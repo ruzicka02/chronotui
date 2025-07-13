@@ -40,6 +40,8 @@ class TimeDisplay(Digits):
     def reset(self):
         self.total = 0
         self.time = 0
+        self.update_timer.reset()
+        self.update_timer.pause()
         logger.info("Stopwatch reset.")
 
     def set_time(self, time: float) -> None:
