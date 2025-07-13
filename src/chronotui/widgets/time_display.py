@@ -41,3 +41,8 @@ class TimeDisplay(Digits):
         self.total = 0
         self.time = 0
         logger.info("Stopwatch reset.")
+
+    def set_time(self, time: float) -> None:
+        self.start_time = monotonic() - time
+        self.time = time
+        self.total = time

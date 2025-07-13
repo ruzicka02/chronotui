@@ -11,10 +11,13 @@ logger = logging.getLogger(__name__)
 class Stopwatch(HorizontalGroup):
     """A stopwatch widget."""
 
-    def __init__(self, name: str = None) -> None:
+    def __init__(self, name: str = None, time: float = 0.0, running: bool = False, active: bool = False) -> None:
         super().__init__()
         self.sw_name = name or "Stopwatch"
         self._label_widget = None
+        self._init_time = time
+        self._init_running = running
+        self._init_active = active
 
     def compose(self):
         label = Label(self.sw_name, id="sw-name")
@@ -23,7 +26,22 @@ class Stopwatch(HorizontalGroup):
         yield Button("Start", id="start", variant="success")
         yield Button("Stop", id="stop", variant="error")
         yield Button("Reset", id="reset")
-        yield TimeDisplay()
+        td = TimeDisplay()
+        yield td
+
+        # Set initial state after mounting
+        def _post_mount():
+            try:
+                td.set_time(self._init_time)
+                if self._init_running:
+                    self.add_class("started")
+                    td.start()
+                if self._init_active:
+                    self.add_class("selected")
+            except Exception as e:
+                logger.warning(f"Failed to set initial state for stopwatch {self.sw_name}: {e}")
+
+        self.call_after_refresh(_post_mount)
 
     def set_name(self, new_name: str) -> None:
         self.sw_name = new_name

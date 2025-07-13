@@ -2,6 +2,7 @@ import logging
 import sys
 import json
 import datetime
+import time
 
 
 from textual import work
@@ -45,9 +46,42 @@ class StopwatchApp(App):
         ("k", "select_up", "Select Up"),
         ("space", "toggle_selected", "Start/Stop Selected"),
         ("s", "save_stopwatches", "Save Stopwatches"),
+        ("L", "load_stopwatches", "Load Stopwatches"),
     ]
 
     SAVE_FILE = "chronotui_state.json"
+
+    async def action_load_stopwatches(self) -> None:
+        """Load stopwatches state from SAVE_FILE and restore them."""
+        try:
+            with open(self.SAVE_FILE, "r") as f:
+                data = json.load(f)
+            stopwatches = data["stopwatches"] if isinstance(data, dict) and "stopwatches" in data else data
+        except Exception as e:
+            logger.error(f"Failed to load stopwatches: {e}")
+            return
+
+        # Remove all existing stopwatches, and wait until they really are removed
+        await self.query("Stopwatch").remove()
+
+        new_stopwatches = []
+        selected_stopwatch = None
+        for sw_data in stopwatches:
+            name = sw_data.get("name", "Stopwatch")
+            sw_time = sw_data.get("time", 0)
+            running = sw_data.get("running", False)
+            active = sw_data.get("active", False)
+            sw = Stopwatch(name, time=sw_time, running=running, active=active)
+            self.query_one("#timers").mount(sw)
+            logger.info(f"Loading stopwatch: {name}")
+            new_stopwatches.append(sw)
+            if active:
+                selected_stopwatch = sw
+        self.selected_stopwatch = (
+            selected_stopwatch if selected_stopwatch else (new_stopwatches[0] if new_stopwatches else None)
+        )
+        logger.info(f"Selected stopwatch: {self.selected_stopwatch.sw_name if self.selected_stopwatch else 'None'}")
+        logger.info(f"Stopwatches loaded from {self.SAVE_FILE}")
 
     def action_save_stopwatches(self) -> None:
         stopwatches = []
