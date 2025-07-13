@@ -1,10 +1,12 @@
 import logging
 import sys
+
 from textual import work
 from textual.app import App, ComposeResult
-from textual.containers import VerticalScroll, Center
+from textual.containers import Center, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Header, Footer, Input
+from textual.widgets import Footer, Header, Input
+
 from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)

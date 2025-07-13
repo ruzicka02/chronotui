@@ -1,7 +1,8 @@
-from time import monotonic
-from textual.widgets import Digits
-from textual.reactive import reactive
 import logging
+from time import monotonic
+
+from textual.reactive import reactive
+from textual.widgets import Digits
 
 logger = logging.getLogger(__name__)
 
