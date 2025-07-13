@@ -2,9 +2,10 @@ import logging
 import sys
 import json
 import datetime
-import time
+import os
 
 
+import platformdirs
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -30,10 +31,6 @@ def main():
 
 
 class StopwatchApp(App):
-    async def on_mount(self) -> None:
-        # Autoload state on app start
-        await self.action_load_stopwatches()
-
     """A Textual app to manage stopwatches."""
 
     CSS_PATH = "stopwatch.tcss"
@@ -54,7 +51,13 @@ class StopwatchApp(App):
         Binding("L", "load_stopwatches", "Load Stopwatches", show=False),
     ]
 
-    SAVE_FILE = "chronotui_state.json"
+    SAVE_PATH = platformdirs.user_data_dir("chronotui")
+    SAVE_FILE = os.path.join(SAVE_PATH, "session.json")
+
+    async def on_mount(self) -> None:
+        os.makedirs(self.SAVE_PATH, exist_ok=True)
+        # Autoload state on app start
+        await self.action_load_stopwatches()
 
     async def action_load_stopwatches(self) -> None:
         """Load stopwatches state from SAVE_FILE and restore them."""
