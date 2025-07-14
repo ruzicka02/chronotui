@@ -33,7 +33,7 @@ class SettingsScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         settings = [
             ("Stop all on start", "stop_all_on_start", False),
-            ("Delete confirmation", "confirm_delete", True),
+            ("Pop-up confirmation screens", "confirmation_screens", True),
         ]
         yield Vertical(
             Label("Settings", id="settings-title", expand=True),

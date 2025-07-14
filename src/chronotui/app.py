@@ -13,7 +13,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
 
 from chronotui.config.defaults import ALLOWED_THEMES, DEFAULT_CONFIG
-from chronotui.widgets.delete_confirm_screen import DeleteConfirmScreen
+from chronotui.widgets.confirm_screen import ConfirmScreen
 from chronotui.widgets.settings_screen import SettingsScreen
 from chronotui.widgets.stopwatch import Stopwatch
 
@@ -95,11 +95,11 @@ class StopwatchApp(App):
             raise ValueError("stop_all_on_start must be a boolean.")
         # does not do any processing, here it's just a value check
 
-        # load confirm_delete
-        if "confirm_delete" not in self.config:
-            raise ValueError("confirm_delete not set in config.")
-        if not isinstance(self.config["confirm_delete"], bool):
-            raise ValueError("confirm_delete must be a boolean.")
+        # load confirmation_screens
+        if "confirmation_screens" not in self.config:
+            raise ValueError("confirmation_screens not set in config.")
+        if not isinstance(self.config["confirmation_screens"], bool):
+            raise ValueError("confirmation_screens must be a boolean.")
 
         logger.info(f"Processed config: {self.config}")
 
@@ -301,8 +301,12 @@ class StopwatchApp(App):
             return
 
         # Confirmation logic
-        if self.config.get("confirm_delete", True):
-            confirmed = await self.push_screen_wait(DeleteConfirmScreen(getattr(to_remove, "sw_name", "Stopwatch")))
+        if self.config.get("confirmation_screens", True):
+            confirmed = await self.push_screen_wait(
+                ConfirmScreen(
+                    stopwatch_name=getattr(to_remove, "sw_name", "Stopwatch"), action_name="delete", confirm_key="d"
+                )
+            )
             if not confirmed:
                 logger.info("Delete cancelled by user.")
                 return
