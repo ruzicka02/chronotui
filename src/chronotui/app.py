@@ -12,7 +12,7 @@ from textual.containers import Center, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
 
-from chronotui.config.defaults import DEFAULT_CONFIG
+from chronotui.config.defaults import ALLOWED_THEMES, DEFAULT_CONFIG
 from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class StopwatchApp(App):
     CSS_PATH = "stopwatch.tcss"
 
     BINDINGS = [
-        ("m", "toggle_dark", "Mode (dark/light)"),
+        ("m", "configure_theme", "Change theme"),
         ("a", "add_stopwatch", "Add"),
         ("d", "delete_stopwatch", "Delete selected"),
         ("r", "reset_selected", "Reset selected"),
@@ -81,7 +81,7 @@ class StopwatchApp(App):
         # load theme
         if "theme" not in self.config:
             raise ValueError("Theme not set in config.")
-        if self.config["theme"] not in ["textual-light", "textual-dark"]:
+        if self.config["theme"] not in ALLOWED_THEMES:
             raise ValueError(f"Invalid theme: {self.config['theme']}")
         self.theme = self.config["theme"]
 
@@ -306,13 +306,15 @@ class StopwatchApp(App):
         self.selected_stopwatch = stopwatch
         logger.debug(f"Stopwatch selected: {stopwatch.sw_name}")
 
-    def action_toggle_dark(self) -> None:
-        self.theme = "textual-dark" if self.theme == "textual-light" else "textual-light"
-        self.config["theme"] = self.theme
-        logger.info(f"Theme toggled: {self.theme}")
+    def action_configure_theme(self) -> None:
+        self.search_themes()
 
     async def action_save_and_quit(self) -> None:
         # Autosave state and config on quit
         self.action_save_stopwatches()
+
+        # Ideally I would do this on theme change, but I don't know how to override the change from the built it select list
+        self.config["theme"] = self.theme
+
         self.save_config()
         self.exit()
