@@ -13,6 +13,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
 
 from chronotui.config.defaults import ALLOWED_THEMES, DEFAULT_CONFIG
+from chronotui.widgets.settings_screen import SettingsScreen
 from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class StopwatchApp(App):
 
     BINDINGS = [
         ("m", "configure_theme", "Change theme"),
+        ("s", "configure_settings", "Settings"),
         ("a", "add_stopwatch", "Add"),
         ("d", "delete_stopwatch", "Delete selected"),
         ("r", "reset_selected", "Reset selected"),
@@ -330,3 +332,6 @@ class StopwatchApp(App):
                 sw.remove_class("started")
                 logger.info(f"Stopped stopwatch: {sw.sw_name}")
         logger.info("All stopwatches stopped.")
+
+    def action_configure_settings(self) -> None:
+        self.push_screen(SettingsScreen())
