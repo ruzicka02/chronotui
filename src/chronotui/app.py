@@ -37,19 +37,19 @@ class StopwatchApp(App):
     CSS_PATH = "stopwatch.tcss"
 
     BINDINGS = [
-        ("m", "configure_theme", "Change theme"),
-        ("s", "configure_settings", "Settings"),
         ("a", "add_stopwatch", "Add"),
         ("d", "delete_stopwatch", "Delete selected"),
         ("r", "reset_selected", "Reset selected"),
         ("c", "change_name", "Change timer name"),
+        ("t", "configure_theme", "Select theme"),
+        ("s", "configure_settings", "Open Settings"),
         ("q", "save_and_quit", "Quit"),
         ("up", "select_up", "Select Up"),
         ("down", "select_down", "Select Down"),
         ("j", "select_down", "Select Down"),
         ("k", "select_up", "Select Up"),
         ("space", "toggle_selected", "Start/Stop Selected"),
-        Binding("s", "save_stopwatches", "Save Stopwatches", show=False),
+        Binding("S", "save_stopwatches", "Save Stopwatches", show=False),
         Binding("L", "load_stopwatches", "Load Stopwatches", show=False),
     ]
 
