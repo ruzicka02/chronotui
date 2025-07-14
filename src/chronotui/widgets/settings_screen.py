@@ -1,3 +1,5 @@
+import logging
+
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import ModalScreen
@@ -28,21 +30,49 @@ class SettingsScreen(ModalScreen):
     }
     """
 
-    def on_key(self, event):
-        if event.key in ("escape", "s", "q"):
-            self.dismiss()
-            event.stop()
-
     def compose(self) -> ComposeResult:
+        settings = [
+            ("Stop all on start", "stop_all_on_start", False),
+            ("Delete confirmation", "confirm_delete", True),
+        ]
         yield Vertical(
             Label("Settings", id="settings-title", expand=True),
-            Checkbox(
-                "Stop all on start", value=self.app.config.get("stop_all_on_start", False), id="stop-all-checkbox"
-            ),
+            *[
+                Checkbox(label, value=self.app.config.get(key, default), id=f"setting-{key}")
+                for label, key, default in settings
+            ],
             id="settings-container",
         )
 
+    def on_mount(self) -> None:
+        # Focus the first checkbox by default
+        checkboxes = list(self.query(Checkbox))
+        if checkboxes:
+            checkboxes[0].focus()
+
+    def on_key(self, event) -> None:
+        checkboxes = list(self.query(Checkbox))
+        focused = self.focused
+        if event.key in ("escape", "s", "q"):
+            self.dismiss()
+            event.stop()
+            return
+        if not checkboxes or focused not in checkboxes:
+            return
+        idx = checkboxes.index(focused)
+        if event.key == "down":
+            if idx < len(checkboxes) - 1:
+                checkboxes[idx + 1].focus()
+                event.stop()
+        elif event.key == "up":
+            if idx > 0:
+                checkboxes[idx - 1].focus()
+                event.stop()
+
     def on_checkbox_changed(self, event):
-        if event.checkbox.id == "stop-all-checkbox":
-            self.app.config["stop_all_on_start"] = event.value
+        # All setting checkboxes have id 'setting-<key>'
+        if event.checkbox.id and event.checkbox.id.startswith("setting-"):
+            key = event.checkbox.id.removeprefix("setting-")
+            self.app.config[key] = event.value
             self.app.save_config()
+            logging.info(f"Settings updated: {key} = {event.value}")

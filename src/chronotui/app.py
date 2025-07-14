@@ -13,6 +13,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
 
 from chronotui.config.defaults import ALLOWED_THEMES, DEFAULT_CONFIG
+from chronotui.widgets.delete_confirm_screen import DeleteConfirmScreen
 from chronotui.widgets.settings_screen import SettingsScreen
 from chronotui.widgets.stopwatch import Stopwatch
 
@@ -93,6 +94,12 @@ class StopwatchApp(App):
         if not isinstance(self.config["stop_all_on_start"], bool):
             raise ValueError("stop_all_on_start must be a boolean.")
         # does not do any processing, here it's just a value check
+
+        # load confirm_delete
+        if "confirm_delete" not in self.config:
+            raise ValueError("confirm_delete not set in config.")
+        if not isinstance(self.config["confirm_delete"], bool):
+            raise ValueError("confirm_delete must be a boolean.")
 
         logger.info(f"Processed config: {self.config}")
 
@@ -283,25 +290,39 @@ class StopwatchApp(App):
         new_stopwatch.scroll_visible()
         logger.info(f"Stopwatch added: {new_name}")
 
-    def action_delete_stopwatch(self) -> None:
+    @work
+    async def action_delete_stopwatch(self) -> None:
         timers = self.query("Stopwatch")
-        if timers:
-            to_remove = self.selected_stopwatch if hasattr(self, "selected_stopwatch") else timers.last()
-            next_selected = None
-            for sw in timers:
-                if sw is to_remove:
-                    break
-                next_selected = sw
-            if not next_selected:
-                idx = list(timers).index(to_remove)
-                if idx + 1 < len(timers):
-                    next_selected = list(timers)[idx + 1]
-            to_remove.remove()
-            logger.info(f"Stopwatch deleted: {to_remove.sw_name}")
-            if next_selected:
-                self.select_stopwatch(next_selected)
-            else:
-                self.selected_stopwatch = None
+        if not timers:
+            return
+        to_remove = self.selected_stopwatch if hasattr(self, "selected_stopwatch") else None
+        if not to_remove:
+            logger.warning("No stopwatch selected for deletion.")
+            return
+
+        # Confirmation logic
+        if self.config.get("confirm_delete", True):
+            confirmed = await self.push_screen_wait(DeleteConfirmScreen(getattr(to_remove, "sw_name", "Stopwatch")))
+            if not confirmed:
+                logger.info("Delete cancelled by user.")
+                return
+
+        next_selected = None
+        for sw in timers:
+            if sw is to_remove:
+                break
+            next_selected = sw
+        if not next_selected:
+            idx = list(timers).index(to_remove)
+            if idx + 1 < len(timers):
+                next_selected = list(timers)[idx + 1]
+
+        to_remove.remove()
+        logger.info(f"Stopwatch deleted: {to_remove.sw_name}")
+        if next_selected:
+            self.select_stopwatch(next_selected)
+        else:
+            self.selected_stopwatch = None
 
     def select_stopwatch(self, stopwatch):
         for sw in self.query("Stopwatch"):
