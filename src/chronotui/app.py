@@ -224,10 +224,19 @@ class StopwatchApp(App):
             self.selected_stopwatch.set_name(new_name)
             logger.info(f"Stopwatch renamed to: {new_name}")
 
-    def action_reset_selected(self) -> None:
+    @work
+    async def action_reset_selected(self) -> None:
         if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
             return
         sw = self.selected_stopwatch
+        # Confirmation logic
+        if self.config.get("confirmation_screens", True):
+            confirmed = await self.push_screen_wait(
+                ConfirmScreen(stopwatch_name=getattr(sw, "sw_name", "Stopwatch"), action_name="reset", confirm_key="r")
+            )
+            if not confirmed:
+                logger.info("Reset cancelled by user.")
+                return
         time_display = sw.query_one("TimeDisplay")
         time_display.reset()
         sw.remove_class("started")
