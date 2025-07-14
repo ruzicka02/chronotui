@@ -52,21 +52,23 @@ class SettingsScreen(ModalScreen):
 
     def on_key(self, event) -> None:
         pressed_key = event.key
-        # stops key event propagation
-        event.stop()
 
         checkboxes = list(self.query(Checkbox))
         focused = self.focused
+
         if pressed_key in ["escape", "s", "q"]:
+            event.stop()
             self.dismiss()
             return
         if not checkboxes or focused not in checkboxes:
             return
         idx = checkboxes.index(focused)
         if pressed_key in ["down", "j"]:
+            event.stop()
             if idx < len(checkboxes) - 1:
                 checkboxes[idx + 1].focus()
         elif pressed_key in ["up", "k"]:
+            event.stop()
             if idx > 0:
                 checkboxes[idx - 1].focus()
 
