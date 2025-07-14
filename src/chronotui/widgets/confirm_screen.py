@@ -52,24 +52,27 @@ class ConfirmScreen(ModalScreen[bool]):
         self.query_one("#confirm-btn", Button).focus()
 
     def on_key(self, event) -> None:
+        pressed_key = event.key
+        # stops key event propagation
+        event.stop()
+
         confirm_btn = self.query_one("#confirm-btn", Button)
         cancel_btn = self.query_one("#cancel-btn", Button)
         focused = self.focused
-        if event.key in ("right"):
+        if pressed_key in ["right"]:
             if focused is confirm_btn:
                 cancel_btn.focus()
-        elif event.key in ("left"):
+        elif pressed_key in ["left"]:
             if focused is cancel_btn:
                 confirm_btn.focus()
-        elif event.key in (self.confirm_key):
-            if focused is confirm_btn:
-                self.on_button_pressed(Button.Pressed(button=confirm_btn))
-        elif event.key in ("escape", "c", "q"):
-            self.on_button_pressed(Button.Pressed(button=cancel_btn))
-        elif event.key in ("enter", "space"):
+        elif pressed_key in ["enter", "space"]:
             if focused:
                 self.on_button_pressed(Button.Pressed(button=focused))
-        event.stop()
+        elif pressed_key in [self.confirm_key]:
+            if focused is confirm_btn:
+                self.on_button_pressed(Button.Pressed(button=confirm_btn))
+        elif pressed_key in ["escape", "c", "q"]:
+            self.on_button_pressed(Button.Pressed(button=cancel_btn))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "confirm-btn":
