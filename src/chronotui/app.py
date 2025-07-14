@@ -12,6 +12,7 @@ from textual.containers import Center, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
 
+from chronotui.config.defaults import DEFAULT_CONFIG
 from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
@@ -53,8 +54,58 @@ class StopwatchApp(App):
     SAVE_PATH = platformdirs.user_data_dir("chronotui")
     SAVE_FILE = os.path.join(SAVE_PATH, "session.json")
 
+    CONFIG_PATH = platformdirs.user_config_dir("chronotui")
+    CONFIG_FILE = os.path.join(CONFIG_PATH, "config.json")
+
+    def load_config(self):
+        """Load configuration from CONFIG_FILE or set defaults."""
+        config = DEFAULT_CONFIG.copy()
+        if os.path.isfile(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, "r") as f:
+                    loaded = json.load(f)
+                config.update(loaded)
+                logger.info(f"Config loaded from {self.CONFIG_FILE}")
+            except Exception as e:
+                logger.error(f"Failed to load config: {e}")
+        else:
+            logger.info("No config file found, using defaults.")
+        self.config = config
+
+    def process_config(self) -> None:
+        """Process the loaded configuration."""
+        if not self.config:
+            raise ValueError("Configuration not loaded. Call load_config() first.")
+
+        # load theme
+        if "theme" not in self.config:
+            raise ValueError("Theme not set in config.")
+        if self.config["theme"] not in ["textual-light", "textual-dark"]:
+            raise ValueError(f"Invalid theme: {self.config['theme']}")
+        self.theme = self.config["theme"]
+
+        # load stop_all_on_start
+        if "stop_all_on_start" not in self.config:
+            raise ValueError("stop_all_on_start not set in config.")
+        if not isinstance(self.config["stop_all_on_start"], bool):
+            raise ValueError("stop_all_on_start must be a boolean.")
+        # does not do any processing, here it's just a value check
+
+        logger.info(f"Processed config: {self.config}")
+
+    def save_config(self):
+        """Save current configuration to CONFIG_FILE."""
+        try:
+            with open(self.CONFIG_FILE, "w") as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            logger.info(f"Config saved to {self.CONFIG_FILE}")
+        except Exception as e:
+            logger.error(f"Failed to save config: {e}")
+
     async def on_mount(self) -> None:
         os.makedirs(self.SAVE_PATH, exist_ok=True)
+        os.makedirs(self.CONFIG_PATH, exist_ok=True)
+        self.load_config()
         # Autoload state on app start
         await self.action_load_stopwatches()
 
@@ -255,9 +306,11 @@ class StopwatchApp(App):
 
     def action_toggle_dark(self) -> None:
         self.theme = "textual-dark" if self.theme == "textual-light" else "textual-light"
+        self.config["theme"] = self.theme
         logger.info(f"Theme toggled: {self.theme}")
 
     async def action_save_and_quit(self) -> None:
-        # Autosave state on quit
+        # Autosave state and config on quit
         self.action_save_stopwatches()
+        self.save_config()
         self.exit()
