@@ -70,6 +70,7 @@ class StopwatchApp(App):
                 logger.error(f"Failed to load config: {e}")
         else:
             logger.info("No config file found, using defaults.")
+        logger.debug(f"Loaded configuration: {config}")
         self.config = config
 
     def process_config(self) -> None:
@@ -106,6 +107,7 @@ class StopwatchApp(App):
         os.makedirs(self.SAVE_PATH, exist_ok=True)
         os.makedirs(self.CONFIG_PATH, exist_ok=True)
         self.load_config()
+        self.process_config()
         # Autoload state on app start
         await self.action_load_stopwatches()
 
