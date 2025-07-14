@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from textual.containers import HorizontalGroup
 from textual.widgets import Button, Label
@@ -11,7 +12,13 @@ logger = logging.getLogger(__name__)
 class Stopwatch(HorizontalGroup):
     """A stopwatch widget."""
 
-    def __init__(self, name: str = None, time: float = 0.0, running: bool = False, active: bool = False) -> None:
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        time: float = 0.0,
+        running: bool = False,
+        active: bool = False,
+    ) -> None:
         super().__init__()
         self.sw_name = name or "Stopwatch"
         self._label_widget = None

@@ -4,6 +4,5 @@ Time tracking app. Originally inspired from https://textual.textualize.io/tutori
 
 from chronotui.app import main
 
-
 if __name__ == "__main__":
     main()
