@@ -53,20 +53,16 @@ class Stopwatch(HorizontalGroup):
         app = self.app
         button_id = event.button.id
         time_display = self.query_one(TimeDisplay)
+        if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
+            app.select_stopwatch(self)
         if button_id == "start":
-            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
-                app.select_stopwatch(self)
             time_display.start()
             self.add_class("started")
             logger.debug(f"Start pressed for {self.sw_name}")
         elif button_id == "stop":
-            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
-                app.select_stopwatch(self)
             time_display.stop()
             self.remove_class("started")
             logger.debug(f"Stop pressed for {self.sw_name}")
         elif button_id == "reset":
-            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
-                app.select_stopwatch(self)
             time_display.reset()
             logger.debug(f"Reset pressed for {self.sw_name}")
