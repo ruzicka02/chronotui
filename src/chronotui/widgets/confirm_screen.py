@@ -59,10 +59,10 @@ class ConfirmScreen(ModalScreen[bool]):
         confirm_btn = self.query_one("#confirm-btn", Button)
         cancel_btn = self.query_one("#cancel-btn", Button)
         focused = self.focused
-        if pressed_key in ["right"]:
+        if pressed_key in ["right", "l"]:
             if focused is confirm_btn:
                 cancel_btn.focus()
-        elif pressed_key in ["left"]:
+        elif pressed_key in ["left", "h"]:
             if focused is cancel_btn:
                 confirm_btn.focus()
         elif pressed_key in ["enter", "space"]:
