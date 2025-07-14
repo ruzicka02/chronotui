@@ -63,6 +63,8 @@ class Stopwatch(HorizontalGroup):
         if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
             app.select_stopwatch(self)
         if button_id == "start":
+            if app.config.get("stop_all_on_start", False):
+                app.action_stop_all_stopwatches()
             time_display.start()
             self.add_class("started")
             logger.debug(f"Start pressed for {self.sw_name}")

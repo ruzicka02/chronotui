@@ -234,6 +234,8 @@ class StopwatchApp(App):
             sw.remove_class("started")
             logger.info(f"Stopwatch stopped: {sw.sw_name}")
         else:
+            if self.config.get("stop_all_on_start", False):
+                self.action_stop_all_stopwatches()
             time_display.start()
             sw.add_class("started")
             logger.info(f"Stopwatch started: {sw.sw_name}")
@@ -318,3 +320,13 @@ class StopwatchApp(App):
 
         self.save_config()
         self.exit()
+
+    def action_stop_all_stopwatches(self) -> None:
+        """Stop all running stopwatches."""
+        for sw in self.query("Stopwatch"):
+            if "started" in sw.classes:
+                time_display = sw.query_one("TimeDisplay")
+                time_display.stop()
+                sw.remove_class("started")
+                logger.info(f"Stopped stopwatch: {sw.sw_name}")
+        logger.info("All stopwatches stopped.")
