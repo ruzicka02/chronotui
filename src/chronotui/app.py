@@ -9,8 +9,9 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, VerticalScroll
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
-from textual.widgets import Footer, Header, Input
+from textual.widgets import Footer, Header, Input, HelpPanel
 
 from chronotui.config.defaults import ALLOWED_THEMES, DEFAULT_CONFIG
 from chronotui.widgets.confirm_screen import ConfirmScreen
@@ -46,6 +47,7 @@ class StopwatchApp(App):
         ("n", "change_name", "reName timer"),
         ("t", "configure_theme", "Theme"),
         ("s", "configure_settings", "Settings"),
+        Binding("?", "toggle_help_panel", "Keybindings", show=True),
         Binding("up", "select_up", "Up", show=False),
         Binding("down", "select_down", "Down", show=False),
         Binding("j", "select_down", "Down", show=False),
@@ -61,6 +63,13 @@ class StopwatchApp(App):
 
     CONFIG_PATH = platformdirs.user_config_dir("chronotui")
     CONFIG_FILE = os.path.join(CONFIG_PATH, "config.json")
+
+    def action_toggle_help_panel(self) -> None:
+        """Toggle the keys panel. The base Textual class can show or hide, but not toggle with one key."""
+        try:
+            self.query_one(HelpPanel).remove()
+        except NoMatches:
+            self.mount(HelpPanel())
 
     def load_config(self):
         """Load configuration from CONFIG_FILE or set defaults."""
