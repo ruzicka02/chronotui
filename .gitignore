@@ -13,3 +13,6 @@ wheels/
 .venv
 
 .env
+
+# vscode settings
+.vscode/settings.json
