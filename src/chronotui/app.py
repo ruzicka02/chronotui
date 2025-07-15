@@ -43,7 +43,7 @@ class StopwatchApp(App):
         ("r", "reset_selected", "Reset"),
         ("a", "add_stopwatch", "Add timer"),
         ("d", "delete_stopwatch", "Delete timer"),
-        ("c", "change_name", "Change timer name"),
+        ("n", "change_name", "reName timer"),
         ("t", "configure_theme", "Theme"),
         ("s", "configure_settings", "Settings"),
         Binding("up", "select_up", "Up", show=False),
@@ -52,6 +52,8 @@ class StopwatchApp(App):
         Binding("k", "select_up", "Up", show=False),
         Binding("S", "save_stopwatches", "Save Stopwatches", show=False),
         Binding("L", "load_stopwatches", "Load Stopwatches", show=False),
+        # duplicate of reName, keep until another usecase for `c` appears
+        Binding("c", "change_name", "Change timer name", show=False),
     ]
 
     SAVE_PATH = platformdirs.user_data_dir("chronotui")
