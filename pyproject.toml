@@ -1,6 +1,6 @@
 [project]
 name = "chronotui"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python TUI with Textual for tracking time "
 readme = "README.md"
 authors = [
