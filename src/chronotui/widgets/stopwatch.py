@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from textual.containers import HorizontalGroup
 from textual.widgets import Button, Label
@@ -11,7 +12,13 @@ logger = logging.getLogger(__name__)
 class Stopwatch(HorizontalGroup):
     """A stopwatch widget."""
 
-    def __init__(self, name: str = None, time: float = 0.0, running: bool = False, active: bool = False) -> None:
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        time: float = 0.0,
+        running: bool = False,
+        active: bool = False,
+    ) -> None:
         super().__init__()
         self.sw_name = name or "Stopwatch"
         self._label_widget = None
@@ -53,20 +60,18 @@ class Stopwatch(HorizontalGroup):
         app = self.app
         button_id = event.button.id
         time_display = self.query_one(TimeDisplay)
+        if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
+            app.select_stopwatch(self)
         if button_id == "start":
-            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
-                app.select_stopwatch(self)
+            if app.config.get("stop_all_on_start", False):
+                app.action_stop_all_stopwatches()
             time_display.start()
             self.add_class("started")
             logger.debug(f"Start pressed for {self.sw_name}")
         elif button_id == "stop":
-            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
-                app.select_stopwatch(self)
             time_display.stop()
             self.remove_class("started")
             logger.debug(f"Stop pressed for {self.sw_name}")
         elif button_id == "reset":
-            if hasattr(app, "selected_stopwatch") and app.selected_stopwatch is not self:
-                app.select_stopwatch(self)
             time_display.reset()
             logger.debug(f"Reset pressed for {self.sw_name}")

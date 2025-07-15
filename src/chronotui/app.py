@@ -1,9 +1,8 @@
-import logging
-import sys
-import json
 import datetime
+import json
+import logging
 import os
-
+import sys
 
 import platformdirs
 from textual import work
@@ -13,6 +12,9 @@ from textual.containers import Center, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input
 
+from chronotui.config.defaults import ALLOWED_THEMES, DEFAULT_CONFIG
+from chronotui.widgets.confirm_screen import ConfirmScreen
+from chronotui.widgets.settings_screen import SettingsScreen
 from chronotui.widgets.stopwatch import Stopwatch
 
 logger = logging.getLogger(__name__)
@@ -36,26 +38,85 @@ class StopwatchApp(App):
     CSS_PATH = "stopwatch.tcss"
 
     BINDINGS = [
-        ("m", "toggle_dark", "Mode (dark/light)"),
         ("a", "add_stopwatch", "Add"),
         ("d", "delete_stopwatch", "Delete selected"),
         ("r", "reset_selected", "Reset selected"),
         ("c", "change_name", "Change timer name"),
+        ("t", "configure_theme", "Select theme"),
+        ("s", "configure_settings", "Open Settings"),
         ("q", "save_and_quit", "Quit"),
         ("up", "select_up", "Select Up"),
         ("down", "select_down", "Select Down"),
         ("j", "select_down", "Select Down"),
         ("k", "select_up", "Select Up"),
         ("space", "toggle_selected", "Start/Stop Selected"),
-        Binding("s", "save_stopwatches", "Save Stopwatches", show=False),
+        Binding("S", "save_stopwatches", "Save Stopwatches", show=False),
         Binding("L", "load_stopwatches", "Load Stopwatches", show=False),
     ]
 
     SAVE_PATH = platformdirs.user_data_dir("chronotui")
     SAVE_FILE = os.path.join(SAVE_PATH, "session.json")
 
+    CONFIG_PATH = platformdirs.user_config_dir("chronotui")
+    CONFIG_FILE = os.path.join(CONFIG_PATH, "config.json")
+
+    def load_config(self):
+        """Load configuration from CONFIG_FILE or set defaults."""
+        config = DEFAULT_CONFIG.copy()
+        if os.path.isfile(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, "r") as f:
+                    loaded = json.load(f)
+                config.update(loaded)
+                logger.info(f"Config loaded from {self.CONFIG_FILE}")
+            except Exception as e:
+                logger.error(f"Failed to load config: {e}")
+        else:
+            logger.info("No config file found, using defaults.")
+        logger.debug(f"Loaded configuration: {config}")
+        self.config = config
+
+    def process_config(self) -> None:
+        """Process the loaded configuration."""
+        if not self.config:
+            raise ValueError("Configuration not loaded. Call load_config() first.")
+
+        # load theme
+        if "theme" not in self.config:
+            raise ValueError("Theme not set in config.")
+        if self.config["theme"] not in ALLOWED_THEMES:
+            raise ValueError(f"Invalid theme: {self.config['theme']}")
+        self.theme = self.config["theme"]
+
+        # load stop_all_on_start
+        if "stop_all_on_start" not in self.config:
+            raise ValueError("stop_all_on_start not set in config.")
+        if not isinstance(self.config["stop_all_on_start"], bool):
+            raise ValueError("stop_all_on_start must be a boolean.")
+        # does not do any processing, here it's just a value check
+
+        # load confirmation_screens
+        if "confirmation_screens" not in self.config:
+            raise ValueError("confirmation_screens not set in config.")
+        if not isinstance(self.config["confirmation_screens"], bool):
+            raise ValueError("confirmation_screens must be a boolean.")
+
+        logger.info(f"Processed config: {self.config}")
+
+    def save_config(self):
+        """Save current configuration to CONFIG_FILE."""
+        try:
+            with open(self.CONFIG_FILE, "w") as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            logger.info(f"Config saved to {self.CONFIG_FILE}")
+        except Exception as e:
+            logger.error(f"Failed to save config: {e}")
+
     async def on_mount(self) -> None:
         os.makedirs(self.SAVE_PATH, exist_ok=True)
+        os.makedirs(self.CONFIG_PATH, exist_ok=True)
+        self.load_config()
+        self.process_config()
         # Autoload state on app start
         await self.action_load_stopwatches()
 
@@ -163,10 +224,19 @@ class StopwatchApp(App):
             self.selected_stopwatch.set_name(new_name)
             logger.info(f"Stopwatch renamed to: {new_name}")
 
-    def action_reset_selected(self) -> None:
+    @work
+    async def action_reset_selected(self) -> None:
         if not hasattr(self, "selected_stopwatch") or self.selected_stopwatch is None:
             return
         sw = self.selected_stopwatch
+        # Confirmation logic
+        if self.config.get("confirmation_screens", True):
+            confirmed = await self.push_screen_wait(
+                ConfirmScreen(stopwatch_name=getattr(sw, "sw_name", "Stopwatch"), action_name="reset", confirm_key="r")
+            )
+            if not confirmed:
+                logger.info("Reset cancelled by user.")
+                return
         time_display = sw.query_one("TimeDisplay")
         time_display.reset()
         sw.remove_class("started")
@@ -182,6 +252,8 @@ class StopwatchApp(App):
             sw.remove_class("started")
             logger.info(f"Stopwatch stopped: {sw.sw_name}")
         else:
+            if self.config.get("stop_all_on_start", False):
+                self.action_stop_all_stopwatches()
             time_display.start()
             sw.add_class("started")
             logger.info(f"Stopwatch started: {sw.sw_name}")
@@ -227,25 +299,43 @@ class StopwatchApp(App):
         new_stopwatch.scroll_visible()
         logger.info(f"Stopwatch added: {new_name}")
 
-    def action_delete_stopwatch(self) -> None:
+    @work
+    async def action_delete_stopwatch(self) -> None:
         timers = self.query("Stopwatch")
-        if timers:
-            to_remove = self.selected_stopwatch if hasattr(self, "selected_stopwatch") else timers.last()
-            next_selected = None
-            for sw in timers:
-                if sw is to_remove:
-                    break
-                next_selected = sw
-            if not next_selected:
-                idx = list(timers).index(to_remove)
-                if idx + 1 < len(timers):
-                    next_selected = list(timers)[idx + 1]
-            to_remove.remove()
-            logger.info(f"Stopwatch deleted: {to_remove.sw_name}")
-            if next_selected:
-                self.select_stopwatch(next_selected)
-            else:
-                self.selected_stopwatch = None
+        if not timers:
+            return
+        to_remove = self.selected_stopwatch if hasattr(self, "selected_stopwatch") else None
+        if not to_remove:
+            logger.warning("No stopwatch selected for deletion.")
+            return
+
+        # Confirmation logic
+        if self.config.get("confirmation_screens", True):
+            confirmed = await self.push_screen_wait(
+                ConfirmScreen(
+                    stopwatch_name=getattr(to_remove, "sw_name", "Stopwatch"), action_name="delete", confirm_key="d"
+                )
+            )
+            if not confirmed:
+                logger.info("Delete cancelled by user.")
+                return
+
+        next_selected = None
+        for sw in timers:
+            if sw is to_remove:
+                break
+            next_selected = sw
+        if not next_selected:
+            idx = list(timers).index(to_remove)
+            if idx + 1 < len(timers):
+                next_selected = list(timers)[idx + 1]
+
+        to_remove.remove()
+        logger.info(f"Stopwatch deleted: {to_remove.sw_name}")
+        if next_selected:
+            self.select_stopwatch(next_selected)
+        else:
+            self.selected_stopwatch = None
 
     def select_stopwatch(self, stopwatch):
         for sw in self.query("Stopwatch"):
@@ -254,11 +344,28 @@ class StopwatchApp(App):
         self.selected_stopwatch = stopwatch
         logger.debug(f"Stopwatch selected: {stopwatch.sw_name}")
 
-    def action_toggle_dark(self) -> None:
-        self.theme = "textual-dark" if self.theme == "textual-light" else "textual-light"
-        logger.info(f"Theme toggled: {self.theme}")
+    def action_configure_theme(self) -> None:
+        self.search_themes()
 
     async def action_save_and_quit(self) -> None:
-        # Autosave state on quit
+        # Autosave state and config on quit
         self.action_save_stopwatches()
+
+        # Ideally I would do this on theme change, but I don't know how to override the change from the built it select list
+        self.config["theme"] = self.theme
+
+        self.save_config()
         self.exit()
+
+    def action_stop_all_stopwatches(self) -> None:
+        """Stop all running stopwatches."""
+        for sw in self.query("Stopwatch"):
+            if "started" in sw.classes:
+                time_display = sw.query_one("TimeDisplay")
+                time_display.stop()
+                sw.remove_class("started")
+                logger.info(f"Stopped stopwatch: {sw.sw_name}")
+        logger.info("All stopwatches stopped.")
+
+    def action_configure_settings(self) -> None:
+        self.push_screen(SettingsScreen())
